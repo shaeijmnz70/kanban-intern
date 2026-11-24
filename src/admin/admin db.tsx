@@ -28,14 +28,18 @@ type Medicine = {
   status: string
 }
 
+function getMedicineStatus(stock: number): string {
+  if (stock === 0) return 'Out of Stock'
+  if (stock <= 100) return 'Low Stock'
+  return 'In Stock'
+}
+
 const navigation: { heading: string; links: { id: PageId; icon: string; label: string }[] }[] = [
   { heading: 'OVERVIEW', links: [{ id: 'dashboard', icon: '▦', label: 'Dashboard' }] },
   { heading: 'PHARMACY', links: [
     { id: 'medicines', icon: '◈', label: 'Medicines' },
     { id: 'inventory', icon: '▤', label: 'Inventory' },
     { id: 'categories', icon: '▦', label: 'Categories' },
-    { id: 'suppliers', icon: '▱', label: 'Suppliers' },
-    { id: 'purchases', icon: '⇄', label: 'Purchases' },
     { id: 'expiration', icon: '◷', label: 'Expiration' },
   ] },
   { heading: 'CARE', links: [
@@ -51,25 +55,11 @@ const navigation: { heading: string; links: { id: PageId; icon: string; label: s
   ] },
 ]
 
-const initialMedicines: Medicine[] = [
-  { code: 'MED-1024', name: 'Biogesic 500mg', generic: 'Paracetamol', category: 'Analgesics', stock: '2,450', unitPrice: '₱2.50', status: 'In Stock' },
-  { code: 'MED-1023', name: 'Amoxil 500mg', generic: 'Amoxicillin', category: 'Antibiotics', stock: '1,820', unitPrice: '₱12.00', status: 'In Stock' },
-  { code: 'MED-1022', name: 'Losartan 50mg', generic: 'Losartan Potassium', category: 'Cardiovascular', stock: '48', unitPrice: '₱8.75', status: 'Low Stock' },
-  { code: 'MED-1021', name: 'Cetirizine 10mg', generic: 'Cetirizine', category: 'Antihistamines', stock: '1,160', unitPrice: '₱3.25', status: 'In Stock' },
-  { code: 'MED-1020', name: 'Omeprazole 20mg', generic: 'Omeprazole', category: 'Gastrointestinal', stock: '0', unitPrice: '₱6.00', status: 'Out of Stock' },
-]
+const initialMedicines: Medicine[] = []
 
 const pageTables: Partial<Record<PageId, { description: string; action: string; columns: string[]; rows: DataRow[] }>> = {
-  inventory: { description: 'Track stock levels, batches, and storage locations.', action: 'Stock In', columns: ['Batch ID', 'Medicine', 'Location', 'Available', 'Reorder Level', 'Status'], rows: [
-    { 'Batch ID': 'BTH-2025-0812', Medicine: 'Biogesic 500mg', Location: 'Main Store · A-03', Available: '2,450 units', 'Reorder Level': '500 units', Status: 'In Stock' },
-    { 'Batch ID': 'BTH-2025-0808', Medicine: 'Amoxil 500mg', Location: 'Main Store · B-01', Available: '1,820 units', 'Reorder Level': '300 units', Status: 'In Stock' },
-    { 'Batch ID': 'BTH-2025-0724', Medicine: 'Losartan 50mg', Location: 'Dispensary · C-02', Available: '48 units', 'Reorder Level': '100 units', Status: 'Low Stock' },
-  ] },
-  categories: { description: 'Organize medicines into groups for easier tracking.', action: 'Add Category', columns: ['Category', 'Medicines', 'Description', 'Last Updated', 'Status'], rows: [
-    { Category: 'Analgesics', Medicines: '186', Description: 'Pain relief and fever reducers', 'Last Updated': 'Feb 22, 2025', Status: 'Active' },
-    { Category: 'Antibiotics', Medicines: '142', Description: 'Bacterial infection treatments', 'Last Updated': 'Feb 21, 2025', Status: 'Active' },
-    { Category: 'Cardiovascular', Medicines: '98', Description: 'Heart and blood pressure care', 'Last Updated': 'Feb 19, 2025', Status: 'Active' },
-  ] },
+  inventory: { description: 'Track stock levels, batches, and storage locations.', action: 'Stock In', columns: ['Batch ID', 'Medicine', 'Location', 'Available', 'Reorder Level', 'Status'], rows: [] },
+  categories: { description: 'Organize medicines into groups for easier tracking.', action: 'Add Category', columns: ['Category', 'Medicines', 'Description', 'Last Updated', 'Status'], rows: [] },
   suppliers: { description: 'Manage supplier details and their purchase history.', action: 'Add Supplier', columns: ['Supplier', 'Contact Person', 'Email', 'Products', 'Status'], rows: [
     { Supplier: 'MedSource Pharma Inc.', 'Contact Person': 'Liza Reyes', Email: 'l.reyes@medsource.ph', Products: '86 medicines', Status: 'Active' },
     { Supplier: 'WellCare Distributors', 'Contact Person': 'Marco Lim', Email: 'marco@wellcare.ph', Products: '54 medicines', Status: 'Active' },
@@ -80,61 +70,62 @@ const pageTables: Partial<Record<PageId, { description: string; action: string; 
     { 'Order ID': 'PO-2025-045', Supplier: 'WellCare Distributors', 'Order Date': 'Feb 22, 2025', Items: '8 items', Total: '₱36,480', Status: 'Received' },
     { 'Order ID': 'PO-2025-044', Supplier: 'PrimeHealth Trading', 'Order Date': 'Feb 20, 2025', Items: '11 items', Total: '₱52,900', Status: 'Pending' },
   ] },
-  expiration: { description: 'Monitor medicine batches approaching their expiry date.', action: 'Export List', columns: ['Medicine', 'Batch Number', 'Quantity', 'Expiry Date', 'Days Left', 'Status'], rows: [
-    { Medicine: 'Amoxil 500mg', 'Batch Number': 'AMX-2406', Quantity: '120 units', 'Expiry Date': 'Mar 18, 2025', 'Days Left': '22 days', Status: 'Expiring Soon' },
-    { Medicine: 'Vitamin C 500mg', 'Batch Number': 'VTC-2408', Quantity: '340 units', 'Expiry Date': 'Apr 09, 2025', 'Days Left': '44 days', Status: 'Expiring Soon' },
-    { Medicine: 'Cetirizine 10mg', 'Batch Number': 'CTZ-2410', Quantity: '85 units', 'Expiry Date': 'May 14, 2025', 'Days Left': '79 days', Status: 'Monitor' },
-  ] },
-  prescriptions: { description: 'Review and verify prescriptions submitted by patients.', action: 'Review Queue', columns: ['Prescription ID', 'Patient', 'Prescriber', 'Submitted', 'Items', 'Status'], rows: [
+  expiration: { description: 'Monitor medicine batches approaching their expiry date.', action: 'Export List', columns: ['Medicine', 'Batch Number', 'Quantity', 'Expiry Date', 'Days Left', 'Status'], rows: [] },
+  prescriptions: { description: 'Review and verify prescriptions submitted by patients.', action: 'Review Queue', columns: ['Prescription ID', 'Patient', 'Prescriber', 'Submitted', 'Items', 'Status'], rows: [] /*
     { 'Prescription ID': 'RX-2025-1842', Patient: 'Maria Santos', Prescriber: 'Dr. Cruz', Submitted: '12 min ago', Items: '3 medicines', Status: 'Pending' },
     { 'Prescription ID': 'RX-2025-1841', Patient: 'Jose Reyes', Prescriber: 'Dr. Villanueva', Submitted: '35 min ago', Items: '2 medicines', Status: 'Verified' },
     { 'Prescription ID': 'RX-2025-1840', Patient: 'Lina Garcia', Prescriber: 'Dr. Lim', Submitted: '1 hr ago', Items: '1 medicine', Status: 'Verified' },
-  ] },
-  patients: { description: 'View patient accounts and their pharmacy activity.', action: 'Add Patient', columns: ['Patient', 'Patient ID', 'Email', 'Prescriptions', 'Last Activity', 'Status'], rows: [
+  */
+  },
+  patients: { description: 'View patient accounts and their pharmacy activity.', action: 'Add Patient', columns: ['Patient', 'Patient ID', 'Email', 'Prescriptions', 'Last Activity', 'Status'], rows: [] /*
     { Patient: 'Maria Santos', 'Patient ID': 'PAT-00824', Email: 'maria.santos@email.com', Prescriptions: '12', 'Last Activity': 'Today', Status: 'Active' },
     { Patient: 'Jose Reyes', 'Patient ID': 'PAT-00823', Email: 'jose.reyes@email.com', Prescriptions: '8', 'Last Activity': 'Yesterday', Status: 'Active' },
     { Patient: 'Lina Garcia', 'Patient ID': 'PAT-00822', Email: 'lina.garcia@email.com', Prescriptions: '5', 'Last Activity': 'Feb 21, 2025', Status: 'Active' },
-  ] },
-  'user-management': { description: 'Manage staff accounts, roles, and access permissions.', action: 'Invite User', columns: ['User', 'Role', 'Email', 'Last Active', 'Status'], rows: [
+  */
+  },
+  'user-management': { description: 'Manage staff accounts, roles, and access permissions.', action: 'Invite User', columns: ['User', 'Role', 'Email', 'Last Active', 'Status'], rows: [] /*
     { User: 'Angela Ramos', Role: 'Pharmacist', Email: 'angela.ramos@medtrack.ph', 'Last Active': 'Now', Status: 'Active' },
     { User: 'Roberto Cruz', Role: 'Inventory Staff', Email: 'roberto.cruz@medtrack.ph', 'Last Active': '18 min ago', Status: 'Active' },
     { User: 'Sofia Admin', Role: 'Super Admin', Email: 'sofia.admin@medtrack.ph', 'Last Active': 'Now', Status: 'Active' },
-  ] },
-  notifications: { description: 'Important alerts and updates from across your pharmacy.', action: 'Mark all read', columns: ['Notification', 'Type', 'Date', 'Priority', 'Status'], rows: [
+  */
+  },
+  notifications: { description: 'Important alerts and updates from across your pharmacy.', action: 'Mark all read', columns: ['Notification', 'Type', 'Date', 'Priority', 'Status'], rows: [] /*
     { Notification: 'Losartan 50mg is below reorder level', Type: 'Low stock', Date: '10 min ago', Priority: 'High', Status: 'Unread' },
     { Notification: '28 medicines expire within 90 days', Type: 'Expiration', Date: '1 hr ago', Priority: 'Medium', Status: 'Unread' },
     { Notification: 'Purchase order PO-2025-046 received', Type: 'Purchase', Date: '2 hr ago', Priority: 'Low', Status: 'Read' },
-  ] },
-  reports: { description: 'Review pharmacy performance and export operational reports.', action: 'Generate Report', columns: ['Report', 'Period', 'Generated By', 'Date', 'Format'], rows: [
+  */
+  },
+  reports: { description: 'Review pharmacy performance and export operational reports.', action: 'Generate Report', columns: ['Report', 'Period', 'Generated By', 'Date', 'Format'], rows: [] /*
     { Report: 'Inventory Summary', Period: 'February 2025', 'Generated By': 'Sofia Admin', Date: 'Feb 24, 2025', Format: 'PDF' },
     { Report: 'Monthly Transactions', Period: 'January 2025', 'Generated By': 'Angela Ramos', Date: 'Feb 01, 2025', Format: 'CSV' },
     { Report: 'Expiration Forecast', Period: 'Q1 2025', 'Generated By': 'Sofia Admin', Date: 'Jan 28, 2025', Format: 'PDF' },
-  ] },
-  'audit-logs': { description: 'A record of recent changes and actions in the system.', action: 'Export Logs', columns: ['User', 'Action', 'Details', 'Date & Time', 'IP Address'], rows: [
+  */
+  },
+  'audit-logs': { description: 'A record of recent changes and actions in the system.', action: 'Export Logs', columns: ['User', 'Action', 'Details', 'Date & Time', 'IP Address'], rows: [] /*
     { User: 'Angela Ramos', Action: 'Stock received', Details: 'Amoxil · +120 units', 'Date & Time': 'Today, 9:42 AM', 'IP Address': '192.168.1.24' },
     { User: 'Sofia Admin', Action: 'Medicine updated', Details: 'Biogesic · Unit price', 'Date & Time': 'Today, 8:56 AM', 'IP Address': '192.168.1.10' },
     { User: 'Roberto Cruz', Action: 'Prescription verified', Details: 'RX-2025-1842 · Maria Santos', 'Date & Time': 'Today, 8:40 AM', 'IP Address': '192.168.1.32' },
-  ] },
+  */
+  },
 }
 
 const pageLabels = Object.fromEntries(navigation.flatMap((group) => group.links.map((link) => [link.id, link.label]))) as Record<PageId, string>
 
-const activities = [
-  { initials: 'AR', title: 'Angela recorded stock in', detail: 'Amoxil · +120 units', time: '12 min ago', color: 'blue' },
-  { initials: 'RC', title: 'Dr. Cruz verified prescription', detail: 'RX-2025-1842 · Maria Santos', time: '28 min ago', color: 'teal' },
-  { initials: 'SA', title: 'You updated medicine details', detail: 'Biogesic · Unit price', time: '1 hr ago', color: 'purple' },
-  { initials: 'AR', title: 'Angela received purchase order', detail: 'PO-2025-046 · 14 items', time: '2 hr ago', color: 'orange' },
-]
+const activities: { initials: string; title: string; detail: string; time: string; color: string }[] = []
 
-function DashboardHome({ onNavigate, onAddMedicine, search }: { onNavigate: (page: PageId) => void; onAddMedicine: () => void; search: string }) {
+function DashboardHome({ onNavigate, onAddMedicine, search, medicines }: { onNavigate: (page: PageId) => void; onAddMedicine: () => void; search: string; medicines: Medicine[] }) {
   const [period, setPeriod] = useState('Last 7 months')
   const visibleActivities = activities.filter((activity) => `${activity.title} ${activity.detail}`.toLowerCase().includes(search.toLowerCase()))
+  const totalStock = medicines.reduce((total, medicine) => total + Number(medicine.stock.replaceAll(',', '')), 0)
+  const categoryCount = new Set(medicines.map((medicine) => medicine.category)).size
+  const lowStockCount = medicines.filter((medicine) => medicine.status === 'Low Stock').length
+  const outOfStockCount = medicines.filter((medicine) => medicine.status === 'Out of Stock').length
   const stats: { label: string; value: string; detail: string; icon: string; tone: string; page: PageId }[] = [
-    { label: 'Total Medicines', value: '0', detail: '0 this month', icon: '◈', tone: 'blue', page: 'medicines' },
-    { label: 'Categories', value: '0', detail: '0 main groups', icon: '▦', tone: 'violet', page: 'categories' },
-    { label: 'Total Stock', value: '0', detail: '₱0 value', icon: '▤', tone: 'teal', page: 'inventory' },
-    { label: 'Low Stock', value: '0', detail: '0 need attention', icon: '⚠', tone: 'amber', page: 'inventory' },
-    { label: 'Out of Stock', value: '0', detail: '0 urgent restocks', icon: '⊘', tone: 'red', page: 'inventory' },
+    { label: 'Total Medicines', value: String(medicines.length), detail: `${medicines.length} in catalog`, icon: '◈', tone: 'blue', page: 'medicines' },
+    { label: 'Categories', value: String(categoryCount), detail: `${categoryCount} main groups`, icon: '▦', tone: 'violet', page: 'categories' },
+    { label: 'Total Stock', value: totalStock.toLocaleString(), detail: 'Units available', icon: '▤', tone: 'teal', page: 'inventory' },
+    { label: 'Low Stock', value: String(lowStockCount), detail: lowStockCount === 1 ? '1 needs attention' : `${lowStockCount} need attention`, icon: '⚠', tone: 'amber', page: 'inventory' },
+    { label: 'Out of Stock', value: String(outOfStockCount), detail: outOfStockCount === 1 ? '1 urgent restock' : `${outOfStockCount} urgent restocks`, icon: '⊘', tone: 'red', page: 'inventory' },
     { label: 'Expiring Soon', value: '0', detail: '0 within 90 days', icon: '◷', tone: 'orange', page: 'expiration' },
     { label: 'Total Users', value: '0', detail: '0 staff · 0 patients', icon: '♙', tone: 'indigo', page: 'user-management' },
   ]
@@ -207,15 +198,37 @@ function MedicineTable({ medicines, query, onQueryChange }: { medicines: Medicin
     <article className="admin-card data-table-card">
       <div className="table-toolbar"><label className="admin-table-search"><span>⌕</span><input value={query} onChange={(event) => onQueryChange(event.target.value)} placeholder="Search medicines..." /></label><select aria-label="Filter by category" value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)}><option>All Categories</option>{Array.from(new Set(medicines.map((medicine) => medicine.category))).map((category) => <option key={category}>{category}</option>)}</select><select aria-label="Filter by status" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}><option>All Status</option><option>In Stock</option><option>Low Stock</option><option>Out of Stock</option></select></div>
       <div className="admin-table-scroll"><table className="admin-table"><thead><tr>{['Medicine', 'Generic Name', 'Category', 'Stock', 'Unit Price', 'Status', ''].map((column) => <th key={column}>{column}</th>)}</tr></thead><tbody>{filtered.map((medicine) => <tr key={medicine.code}><td><strong>{medicine.name}</strong><small>{medicine.code}</small></td><td>{medicine.generic}</td><td>{medicine.category}</td><td>{medicine.stock} units</td><td>{medicine.unitPrice}</td><td><span className={`status-pill ${medicine.status.toLowerCase().replaceAll(' ', '-')}`}>{medicine.status}</span></td><td><button className="row-menu" aria-label={`Actions for ${medicine.name}`}>•••</button></td></tr>)}</tbody></table>{filtered.length === 0 && <p className="table-empty">No medicines match your search.</p>}</div>
-      <footer className="table-footer"><span>Showing {filtered.length} of {medicines.length} medicines</span><div><button disabled>Previous</button><button className="page-number">1</button><button>2</button><button>3</button><button>Next</button></div></footer>
+      <footer className="table-footer"><span>Showing {filtered.length} of {medicines.length} medicines</span></footer>
     </article>
   )
 }
 
-function ModulePage({ page, query, onQueryChange, onAction }: { page: PageId; query: string; onQueryChange: (value: string) => void; onAction: () => void }) {
+function ModulePage({ page, query, onQueryChange, onAction, medicines }: { page: PageId; query: string; onQueryChange: (value: string) => void; onAction: () => void; medicines: Medicine[] }) {
   const [statusFilter, setStatusFilter] = useState('All Status')
-  const data = pageTables[page]
+  let data = pageTables[page]
   if (!data) return <SettingsPage />
+
+  if (page === 'inventory') {
+    data = { ...data, rows: medicines.map((medicine) => ({
+      'Batch ID': medicine.code,
+      Medicine: medicine.name,
+      Location: 'Main Store',
+      Available: `${medicine.stock} units`,
+      'Reorder Level': '50 units',
+      Status: medicine.status,
+    })) }
+  }
+
+  if (page === 'categories') {
+    const categoryRows = Array.from(new Set(medicines.map((medicine) => medicine.category))).map((category) => ({
+      Category: category,
+      Medicines: String(medicines.filter((medicine) => medicine.category === category).length),
+      Description: `${category} medicines`,
+      'Last Updated': 'Just now',
+      Status: 'Active',
+    }))
+    data = { ...data, rows: categoryRows }
+  }
   const statusOptions = Array.from(new Set(data.rows.map((row) => row.Status || row.Priority).filter((value): value is string => Boolean(value))))
   const filteredRows = data.rows.filter((row) => {
     const matchesQuery = Object.values(row).some((value) => value.toLowerCase().includes(query.toLowerCase()))
@@ -225,12 +238,12 @@ function ModulePage({ page, query, onQueryChange, onAction }: { page: PageId; qu
   return (
     <section className="module-page">
       <div className="admin-page-heading"><div><p className="admin-date">PHARMACY MANAGEMENT</p><h1>{pageLabels[page]}</h1><p className="admin-muted">{data.description}</p></div><button className="admin-primary" onClick={onAction}><span>＋</span> {data.action}</button></div>
-      <div className="module-summary"><div><small>Total {pageLabels[page]}</small><strong>0</strong><span>Updated just now</span></div><div><small>Needs attention</small><strong className="summary-warning">0</strong><span>Review items below</span></div><div><small>Active this month</small><strong>0%</strong><span className="summary-positive">Compared to last month</span></div></div>
+      <div className="module-summary"><div><small>Total {pageLabels[page]}</small><strong>{filteredRows.length}</strong><span>Updated just now</span></div><div><small>Needs attention</small><strong className="summary-warning">{filteredRows.filter((row) => row.Status === 'Low Stock' || row.Status === 'Out of Stock' || row.Status === 'Expiring Soon').length}</strong><span>Review items below</span></div><div><small>Active this month</small><strong>{filteredRows.length > 0 ? '100%' : '0%'}</strong><span className="summary-positive">Compared to last month</span></div></div>
       <article className="admin-card data-table-card module-table">
         <header className="module-table-heading"><div><h2>{page === 'expiration' ? 'Upcoming Expirations' : `All ${pageLabels[page]}`}</h2><p>Review and manage records in your pharmacy.</p></div><button className="admin-outline-button">⇩ Export</button></header>
         <div className="table-toolbar"><label className="admin-table-search"><span>⌕</span><input value={query} onChange={(event) => onQueryChange(event.target.value)} placeholder={`Search ${pageLabels[page].toLowerCase()}...`} /></label><select aria-label="Filter records" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}><option>All Status</option>{statusOptions.map((status) => <option key={status}>{status}</option>)}</select></div>
         <div className="admin-table-scroll"><table className="admin-table"><thead><tr>{data.columns.map((column) => <th key={column}>{column}</th>)}<th /></tr></thead><tbody>{filteredRows.map((row, index) => <tr key={`${page}-${index}`}>{data.columns.map((column) => <td key={column}>{column === 'Status' || column === 'Priority' ? <span className={`status-pill ${row[column].toLowerCase().replaceAll(' ', '-')}`}>{row[column]}</span> : row[column]}</td>)}<td><button className="row-menu" aria-label="Row actions">•••</button></td></tr>)}</tbody></table>{filteredRows.length === 0 && <p className="table-empty">No records match your search.</p>}</div>
-        <footer className="table-footer"><span>Showing {filteredRows.length} records</span><div><button disabled>Previous</button><button className="page-number">1</button><button>Next</button></div></footer>
+        <footer className="table-footer"><span>Showing {filteredRows.length} records</span></footer>
       </article>
     </section>
   )
@@ -256,7 +269,7 @@ function MedicineModal({ onClose, onSave }: { onClose: () => void; onSave: (medi
       category: String(formData.get('category')),
       stock: String(formData.get('stock')),
       unitPrice: `₱${Number(formData.get('price')).toFixed(2)}`,
-      status: Number(formData.get('stock')) > 50 ? 'In Stock' : 'Low Stock',
+      status: getMedicineStatus(Number(formData.get('stock'))),
     })
   }
 
@@ -266,13 +279,31 @@ function MedicineModal({ onClose, onSave }: { onClose: () => void; onSave: (medi
 export default function AdminDashboard() {
   const [activePage, setActivePage] = useState<PageId>('dashboard')
   const [search, setSearch] = useState('')
-  const [medicines, setMedicines] = useState(initialMedicines)
+  const [medicines, setMedicines] = useState<Medicine[]>(() => {
+    try {
+      const stored = localStorage.getItem('medtrack-medicines')
+      if (stored) {
+        const medicines = JSON.parse(stored) as Medicine[]
+        return medicines.map((medicine) => ({
+          ...medicine,
+          status: getMedicineStatus(Number(medicine.stock.replaceAll(',', ''))),
+        }))
+      }
+      return initialMedicines
+    } catch {
+      return initialMedicines
+    }
+  })
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
 
   function saveMedicine(medicine: Medicine) {
-    setMedicines((current) => [medicine, ...current])
+    setMedicines((current) => {
+      const next = [medicine, ...current]
+      localStorage.setItem('medtrack-medicines', JSON.stringify(next))
+      return next
+    })
     setIsModalOpen(false)
     setActivePage('medicines')
     setSearch('')
@@ -293,10 +324,10 @@ export default function AdminDashboard() {
 
         <div className="admin-content">
           {activePage === 'dashboard'
-            ? <DashboardHome onNavigate={setActivePage} onAddMedicine={() => setIsModalOpen(true)} search={search} />
+            ? <DashboardHome onNavigate={setActivePage} onAddMedicine={() => setIsModalOpen(true)} search={search} medicines={medicines} />
             : activePage === 'medicines'
-              ? <section className="module-page"><div className="admin-page-heading"><div><p className="admin-date">PHARMACY MANAGEMENT</p><h1>Medicines</h1><p className="admin-muted">Manage your medicine catalog, pricing, and availability.</p></div><button className="admin-primary" onClick={() => setIsModalOpen(true)}><span>＋</span> Add Medicine</button></div><div className="module-summary"><div><small>Total Medicines</small><strong>0</strong><span>0 this month</span></div><div><small>Low Stock</small><strong className="summary-warning">0</strong><span>Needs attention</span></div><div><small>Out of Stock</small><strong>0</strong><span>Restock urgently</span></div></div><MedicineTable medicines={medicines} query={search} onQueryChange={setSearch} /></section>
-              : <ModulePage page={activePage} query={search} onQueryChange={setSearch} onAction={() => activePage === 'categories' ? setActivePage('medicines') : setIsModalOpen(true)} />}
+              ? <section className="module-page"><div className="admin-page-heading"><div><p className="admin-date">PHARMACY MANAGEMENT</p><h1>Medicines</h1><p className="admin-muted">Manage your medicine catalog, pricing, and availability.</p></div><button className="admin-primary" onClick={() => setIsModalOpen(true)}><span>＋</span> Add Medicine</button></div><div className="module-summary"><div><small>Total Medicines</small><strong>{medicines.length}</strong><span>{medicines.length === 1 ? '1 in catalog' : `${medicines.length} in catalog`}</span></div><div><small>Low Stock</small><strong className="summary-warning">{medicines.filter((medicine) => medicine.status === 'Low Stock').length}</strong><span>Needs attention</span></div><div><small>Out of Stock</small><strong>{medicines.filter((medicine) => medicine.status === 'Out of Stock').length}</strong><span>Restock urgently</span></div></div><MedicineTable medicines={medicines} query={search} onQueryChange={setSearch} /></section>
+              : <ModulePage page={activePage} query={search} onQueryChange={setSearch} medicines={medicines} onAction={() => activePage === 'categories' ? setActivePage('medicines') : setIsModalOpen(true)} />}
         </div>
       </section>
       {isModalOpen && <MedicineModal onClose={() => setIsModalOpen(false)} onSave={saveMedicine} />}
